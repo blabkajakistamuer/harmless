@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sprawdź Interakcje</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#000000"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #000; min-height: 100vh; overflow-x: hidden; }
+
+    @keyframes fall {
+      0%   { transform: translateY(-40px) rotate(0deg); opacity: 0; }
+      8%   { opacity: 1; }
+      90%  { opacity: 1; }
+      100% { transform: translateY(900px) rotate(12deg); opacity: 0; }
+    }
+    @keyframes title-glitch {
+      0%, 92%, 100% { transform: skewX(0deg); }
+      93% { transform: skewX(-3deg); }
+      94% { transform: skewX(2deg); }
+      95% { transform: skewX(0deg); }
+    }
+    @keyframes glitch-red {
+      0%, 90%, 100% { clip-path: inset(40% 0 50% 0); transform: translateX(0); }
+      91% { clip-path: inset(20% 0 60% 0); transform: translateX(4px); }
+      92% { clip-path: inset(60% 0 20% 0); transform: translateX(-2px); }
+      93% { clip-path: inset(35% 0 55% 0); transform: translateX(3px); }
+    }
+    @keyframes glitch-blue {
+      0%, 85%, 100% { clip-path: inset(20% 0 70% 0); transform: translateX(0); }
+      86% { clip-path: inset(50% 0 30% 0); transform: translateX(-4px); }
+      87% { clip-path: inset(10% 0 80% 0); transform: translateX(3px); }
+      88% { clip-path: inset(70% 0 10% 0); transform: translateX(-2px); }
+    }
+    @keyframes glitch-danger {
+      0%, 100% { transform: translateX(0); filter: none; }
+      10% { transform: translateX(-3px); filter: blur(0.5px); }
+      11% { transform: translateX(3px); }
+      12% { transform: translateX(0); }
+      50% { transform: translateX(2px); filter: blur(0.3px); }
+      51% { transform: translateX(-2px); }
+      52% { transform: translateX(0); filter: none; }
+    }
+    @keyframes pulse-risk {
+      0%, 100% { opacity: 1; text-shadow: 0 0 15px #FFD700, 0 0 30px #FFD700; }
+      50% { opacity: 0.7; text-shadow: 0 0 5px #FFD700; }
+    }
+    @keyframes neon-safe {
+      0%, 100% { text-shadow: 0 0 10px #00FF00, 0 0 20px #00FF00, 0 0 40px #00FF00; }
+      50% { text-shadow: 0 0 5px #00FF00, 0 0 10px #00FF00; }
+    }
+    @keyframes scanlines {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 4px; }
+    }
+    select:focus {
+      box-shadow: 0 0 15px rgba(0,255,0,0.4), inset 0 0 10px rgba(0,255,0,0.1) !important;
+      outline: none;
+    }
+    select { outline: none; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #00FF00; }
+  </style>
+</head>
+<body>
+<a style="display:block;width:100%;background:#FF0000;border:none;color:#fff;font-family:'VT323',monospace;font-size:1.3rem;letter-spacing:0.2em;padding:0.6rem;cursor:pointer;text-align:center;text-decoration:none;position:relative;z-index:100;" href="tel:112">&#9888; PANIC — ZADZWON 112</a>
+<nav style="display:flex;gap:0;position:relative;z-index:10;border-bottom:1px solid #001a00;">
+<a href="/" style="flex:1;text-align:center;padding:0.5rem 0.2rem;font-family:'VT323',monospace;font-size:0.95rem;color:#004400;text-decoration:none;letter-spacing:0.1em;border-right:1px solid #001a00;">GLOWNA</a>
+<a href="/kalkulator/" style="flex:1;text-align:center;padding:0.5rem 0.2rem;font-family:'VT323',monospace;font-size:0.95rem;color:#004400;text-decoration:none;letter-spacing:0.1em;border-right:1px solid #001a00;">KALKULATOR</a>
+<a href="/interakcje/" style="flex:1;text-align:center;padding:0.5rem 0.2rem;font-family:'VT323',monospace;font-size:0.95rem;color:#00FF00;text-decoration:none;letter-spacing:0.1em;border-right:1px solid #001a00;background:rgba(0,255,0,0.05);">INTERAKCJE</a>
+<a href="/pomoc/" style="flex:1;text-align:center;padding:0.5rem 0.2rem;font-family:'VT323',monospace;font-size:0.95rem;color:#004400;text-decoration:none;letter-spacing:0.1em;border-right:1px solid #001a00;">POMOC</a>
+<a href="/sor/" style="flex:1;text-align:center;padding:0.5rem 0.2rem;font-family:'VT323',monospace;font-size:0.95rem;color:#004400;text-decoration:none;letter-spacing:0.1em;">SOR</a>
+</nav>
+
+  <div id="root"></div>
+
+  <script>
+    const { useState, useEffect } = React;
+    const e = React.createElement;
+
+    const SUBSTANCES = ["Alkohol", "Benzodiazepiny", "Marihuana", "Opioidy", "Ketamina", "MDMA", "LSD"];
+
+    const INTERACTIONS = {
+      "Opioidy+Alkohol": "ZAGROŻENIE ŻYCIA",
+      "Alkohol+Opioidy": "ZAGROŻENIE ŻYCIA",
+      "Benzodiazepiny+Alkohol": "ZAGROŻENIE ŻYCIA",
+      "Alkohol+Benzodiazepiny": "ZAGROŻENIE ŻYCIA",
+      "Benzodiazepiny+Opioidy": "ZAGROŻENIE ŻYCIA",
+      "Opioidy+Benzodiazepiny": "ZAGROŻENIE ŻYCIA",
+      "Ketamina+Alkohol": "ZAGROŻENIE ŻYCIA",
+      "Alkohol+Ketamina": "ZAGROŻENIE ŻYCIA",
+      "Ketamina+Opioidy": "ZAGROŻENIE ŻYCIA",
+      "Opioidy+Ketamina": "ZAGROŻENIE ŻYCIA",
+      "Ketamina+Benzodiazepiny": "RYZYKO",
+      "Benzodiazepiny+Ketamina": "RYZYKO",
+      "MDMA+Alkohol": "RYZYKO",
+      "Alkohol+MDMA": "RYZYKO",
+      "LSD+Marihuana": "RYZYKO",
+      "Marihuana+LSD": "RYZYKO",
+      "Marihuana+Alkohol": "NISKIE RYZYKO",
+      "Alkohol+Marihuana": "NISKIE RYZYKO",
+      "Marihuana+Opioidy": "NISKIE RYZYKO",
+      "Opioidy+Marihuana": "NISKIE RYZYKO",
+      "Marihuana+Benzodiazepiny": "NISKIE RYZYKO",
+      "Benzodiazepiny+Marihuana": "NISKIE RYZYKO",
+      "Marihuana+Ketamina": "NISKIE RYZYKO",
+      "Ketamina+Marihuana": "NISKIE RYZYKO",
+      "MDMA+Opioidy": "NISKIE RYZYKO",
+      "Opioidy+MDMA": "NISKIE RYZYKO",
+      "MDMA+Marihuana": "NISKIE RYZYKO",
+      "Marihuana+MDMA": "NISKIE RYZYKO",
+      "MDMA+Benzodiazepiny": "NISKIE RYZYKO",
+      "Benzodiazepiny+MDMA": "NISKIE RYZYKO",
+      "MDMA+Ketamina": "NISKIE RYZYKO",
+      "Ketamina+MDMA": "NISKIE RYZYKO",
+      "LSD+Alkohol": "NISKIE RYZYKO",
+      "Alkohol+LSD": "NISKIE RYZYKO",
+      "LSD+Opioidy": "NISKIE RYZYKO",
+      "Opioidy+LSD": "NISKIE RYZYKO",
+      "LSD+Benzodiazepiny": "NISKIE RYZYKO",
+      "Benzodiazepiny+LSD": "NISKIE RYZYKO",
+      "LSD+Ketamina": "NISKIE RYZYKO",
+      "Ketamina+LSD": "NISKIE RYZYKO",
+      "LSD+MDMA": "NISKIE RYZYKO",
+      "MDMA+LSD": "NISKIE RYZYKO",
+    };
+
+    const RISK_CONFIG = {
+      "ZAGROŻENIE ŻYCIA": { color: "#FF0000", glow: "0 0 20px #FF0000, 0 0 40px #FF0000", animation: "glitch-danger 0.15s infinite" },
+      "RYZYKO":           { color: "#FFD700", glow: "0 0 15px #FFD700, 0 0 30px #FFD700", animation: "pulse-risk 2s infinite" },
+      "NISKIE RYZYKO":    { color: "#00FF00", glow: "0 0 10px #00FF00, 0 0 20px #00FF00", animation: "neon-safe 3s infinite" },
+    };
+
+    const PILL_COLORS = ["#FF0000", "#FFD700", "#00FF00"];
+
+    function PillSVG({ size, color }) {
+      return e("svg", {
+        width: size, height: size * 0.5,
+        viewBox: "0 0 60 30", fill: "none",
+        stroke: color, strokeWidth: "2.5",
+      },
+        e("rect", { x: "2", y: "2", width: "56", height: "26", rx: "13" }),
+        e("line", { x1: "30", y1: "2", x2: "30", y2: "28" })
+      );
+    }
+
+    function PanelRain() {
+      const symbols = Array.from({ length: 28 }, (_, i) => ({
+        id: i,
+        x: (i * 3.6) % 95,
+        delay: (i * 0.41) % 8,
+        duration: 6 + (i % 5),
+        color: PILL_COLORS[i % 3],
+      }));
+
+      return e("div", {
+        style: {
+          position: "absolute", inset: 0,
+          overflow: "hidden", zIndex: 0,
+          pointerEvents: "none",
+        }
+      },
+        symbols.map(s =>
+          e("div", {
+            key: s.id,
+            style: {
+              position: "absolute",
+              left: s.x + "%",
+              top: "-40px",
+              animation: `fall ${s.duration}s linear ${s.delay}s infinite`,
+              pointerEvents: "none",
+              filter: `drop-shadow(0 0 3px ${s.color})`,
+            }
+          },
+            e(PillSVG, { size: 26, color: s.color })
+          )
+        )
+      );
+    }
+
+    function GlitchTitle() {
+      const text = "SPRAWDŹ INTERAKCJE";
+      return e("div", {
+        style: {
+          position: "relative", textAlign: "center",
+          marginBottom: "2rem", userSelect: "none", zIndex: 1,
+        }
+      },
+        e("div", {
+          style: {
+            fontFamily: "'VT323', monospace",
+            fontSize: "clamp(2rem, 6vw, 4.5rem)",
+            color: "#00FF00",
+            letterSpacing: "0.08em",
+            lineHeight: 1.1,
+            position: "relative",
+            display: "inline-block",
+            animation: "title-glitch 3s infinite",
+            textShadow: "0 0 10px #00FF00, 0 0 20px #00FF00",
+          }
+        },
+          text,
+          e("span", {
+            style: {
+              position: "absolute", inset: 0, color: "#FF0000",
+              clipPath: "inset(40% 0 50% 0)", animation: "glitch-red 2.5s infinite",
+              left: "3px", top: "-1px", opacity: 0.7, whiteSpace: "nowrap",
+            }
+          }, text),
+          e("span", {
+            style: {
+              position: "absolute", inset: 0, color: "#0066FF",
+              clipPath: "inset(20% 0 70% 0)", animation: "glitch-blue 2s infinite",
+              left: "-3px", top: "1px", opacity: 0.7, whiteSpace: "nowrap",
+            }
+          }, text)
+        )
+      );
+    }
+
+    function SubstanceSelector({ label, value, onChange, exclude }) {
+      return e("div", { style: { flex: 1, minWidth: 0, position: "relative", zIndex: 1 } },
+        e("div", {
+          style: {
+            fontFamily: "'VT323', monospace",
+            fontSize: "0.85rem", color: "#00AA44",
+            letterSpacing: "0.2em", marginBottom: "0.5rem",
+          }
+        }, label),
+        e("div", { style: { position: "relative" } },
+          e("select", {
+            value: value,
+            onChange: ev => onChange(ev.target.value),
+            style: {
+              width: "100%",
+              background: "rgba(0,0,0,0.7)",
+              border: "1px solid #00FF00",
+              color: value ? "#00FF00" : "#005500",
+              fontFamily: "'VT323', monospace",
+              fontSize: "1.2rem",
+              padding: "0.7rem 2rem 0.7rem 0.8rem",
+              cursor: "pointer",
+              outline: "none",
+              appearance: "none",
+              WebkitAppearance: "none",
+              letterSpacing: "0.05em",
+              boxShadow: value ? "0 0 10px rgba(0,255,0,0.2)" : "none",
+              transition: "all 0.2s",
+            }
+          },
+            e("option", { value: "", style: { background: "#000", color: "#005500" } }, "wybierz substancję"),
+            SUBSTANCES.filter(s => s !== exclude).map(s =>
+              e("option", { key: s, value: s, style: { background: "#000", color: "#00FF00" } }, s.toUpperCase())
+            )
+          ),
+          e("span", {
+            style: {
+              position: "absolute", right: "0.7rem", top: "50%",
+              transform: "translateY(-50%)", color: "#00FF00",
+              pointerEvents: "none", fontFamily: "monospace", fontSize: "0.8rem",
+            }
+          }, "▼")
+        )
+      );
+    }
+
+    function ResultDisplay({ result }) {
+      const [visible, setVisible] = useState(false);
+      const [noisePhase, setNoisePhase] = useState(0);
+      const [currentResult, setCurrentResult] = useState(result);
+
+      useEffect(() => {
+        if (result) {
+          setVisible(false);
+          setNoisePhase(0);
+          const t1 = setTimeout(() => setNoisePhase(1), 50);
+          const t2 = setTimeout(() => { setCurrentResult(result); setNoisePhase(2); }, 300);
+          const t3 = setTimeout(() => { setVisible(true); setNoisePhase(0); }, 500);
+          return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+        } else {
+          setVisible(false);
+          setCurrentResult(null);
+        }
+      }, [result]);
+
+      if (!currentResult && !result) {
+        return e("div", {
+          style: {
+            border: "1px solid #003300",
+            padding: "2rem", textAlign: "center",
+            fontFamily: "'VT323', monospace",
+            color: "#003300", fontSize: "1rem",
+            letterSpacing: "0.2em",
+            background: "rgba(0,10,0,0.6)",
+            minHeight: "100px",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            position: "relative", zIndex: 1,
+          }
+        }, e("span", null, "oczekiwanie na dane..."));
+      }
+
+      const cfg = RISK_CONFIG[currentResult || result];
+      if (!cfg) return null;
+
+      return e("div", {
+        style: {
+          border: `1px solid ${cfg.color}`,
+          padding: "2rem", textAlign: "center",
+          background: `rgba(${cfg.color === "#FF0000" ? "255,0,0" : cfg.color === "#FFD700" ? "255,215,0" : "0,255,0"},0.05)`,
+          boxShadow: `0 0 30px ${cfg.color}33`,
+          minHeight: "100px",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          position: "relative", zIndex: 1, overflow: "hidden",
+          opacity: noisePhase === 1 ? 0.3 : 1,
+          filter: noisePhase === 1 ? "blur(2px)" : "none",
+          transition: "opacity 0.15s, filter 0.15s",
+        }
+      },
+        visible && e("div", {
+          style: {
+            fontFamily: "'VT323', monospace",
+            fontSize: "clamp(2rem, 7vw, 3.5rem)",
+            color: cfg.color,
+            textShadow: cfg.glow,
+            letterSpacing: "0.05em",
+            animation: cfg.animation,
+            lineHeight: 1.1,
+          }
+        }, currentResult || result)
+      );
+    }
+
+    function App() {
+      const [sub1, setSub1] = useState("");
+      const [sub2, setSub2] = useState("");
+
+      const key = sub1 && sub2 ? sub1 + "+" + sub2 : null;
+      const result = key ? (INTERACTIONS[key] || null) : null;
+
+      return e("div", {
+        style: {
+          minHeight: "100vh",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          padding: "2rem 1rem",
+          fontFamily: "'JetBrains Mono', monospace",
+        }
+      },
+        // Scanline overlay
+        e("div", {
+          style: {
+            position: "fixed", inset: 0,
+            background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px)",
+            pointerEvents: "none", zIndex: 0,
+          }
+        }),
+
+        // Main panel
+        e("div", {
+          style: {
+            width: "100%", maxWidth: "680px",
+            position: "relative", zIndex: 1,
+            padding: "2rem",
+            border: "1px solid #00FF00",
+            boxShadow: "0 0 20px rgba(0,255,0,0.1)",
+            overflow: "hidden",
+          }
+        },
+          // Corner decorations
+          ...["top-left","top-right","bottom-left","bottom-right"].map(corner =>
+            e("div", {
+              key: corner,
+              style: {
+                position: "absolute", width: "16px", height: "16px",
+                borderTop: corner.includes("top") ? "2px solid #00FF00" : "none",
+                borderBottom: corner.includes("bottom") ? "2px solid #00FF00" : "none",
+                borderLeft: corner.includes("left") ? "2px solid #00FF00" : "none",
+                borderRight: corner.includes("right") ? "2px solid #00FF00" : "none",
+                top: corner.includes("top") ? "0" : "auto",
+                bottom: corner.includes("bottom") ? "0" : "auto",
+                left: corner.includes("left") ? "0" : "auto",
+                right: corner.includes("right") ? "0" : "auto",
+                zIndex: 2,
+              }
+            })
+          ),
+
+          // Pills rain
+          e(PanelRain),
+
+          // Title
+          e(GlitchTitle),
+
+          // Quote
+          e("div", {
+            style: {
+              fontFamily: "'VT323', monospace",
+              fontSize: "0.85rem", color: "#004400",
+              letterSpacing: "0.06em", marginBottom: "1.5rem",
+              borderTop: "1px solid #001a00", borderBottom: "1px solid #001a00",
+              padding: "0.5rem", textAlign: "center", fontStyle: "italic",
+              position: "relative", zIndex: 1,
+            }
+          }, "It's better to be high thinking about God than sober thinking about weed"),
+
+          // Selectors row
+          e("div", {
+            style: {
+              display: "flex", gap: "1rem", marginBottom: "1.5rem",
+              flexWrap: "wrap", position: "relative", zIndex: 1,
+            }
+          },
+            e(SubstanceSelector, { label: "substancja 1", value: sub1, onChange: setSub1, exclude: sub2 }),
+            e("div", {
+              style: {
+                display: "flex", alignItems: "flex-end", paddingBottom: "0.7rem",
+                fontFamily: "'VT323', monospace", fontSize: "1.8rem", color: "#003300",
+              }
+            }, "+"),
+            e(SubstanceSelector, { label: "substancja 2", value: sub2, onChange: setSub2, exclude: sub1 })
+          ),
+
+          // Result
+          e("div", { style: { marginBottom: "0.5rem", position: "relative", zIndex: 1 } },
+            e("div", {
+              style: {
+                fontFamily: "'VT323', monospace", fontSize: "0.8rem",
+                color: "#00AA44", letterSpacing: "0.2em", marginBottom: "0.5rem",
+              }
+            }, "wynik analizy"),
+            e(ResultDisplay, { result }),
+            sub1 && sub2 && !result && e("div", {
+              style: {
+                fontFamily: "'VT323', monospace", fontSize: "0.85rem",
+                color: "#444", textAlign: "center", marginTop: "0.5rem",
+                letterSpacing: "0.1em",
+              }
+            }, "brak danych dla tej kombinacji")
+          )
+        ),
+
+        // Footer
+        e("div", {
+          style: {
+            position: "relative", zIndex: 1,
+            maxWidth: "680px", width: "100%",
+            paddingTop: "1rem", textAlign: "center",
+          }
+        },
+          e("p", {
+            style: {
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: "0.65rem", color: "#003300",
+              letterSpacing: "0.05em", lineHeight: 1.6, fontStyle: "italic",
+            }
+          }, "Strona ma charakter informacyjny i edukacyjny. Miksowanie substancji zawsze wiąże się z ryzykiem.")
+        )
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(e(App));
+  </script>
+</body>
+</html>
