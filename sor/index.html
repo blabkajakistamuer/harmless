@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mapa SOR</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#000000"/>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#000;min-height:100vh;font-family:'JetBrains Mono',monospace;color:#00FF00;}
+    @keyframes warn-pulse{0%,100%{box-shadow:0 0 15px #FF000066;}50%{box-shadow:0 0 35px #FF0000CC;}}
+    @keyframes title-glitch{0%,92%,100%{transform:skewX(0deg);}93%{transform:skewX(-3deg);}94%{transform:skewX(2deg);}}
+    @keyframes glitch-red{0%,90%,100%{clip-path:inset(40% 0 50% 0);transform:translateX(0);}91%{clip-path:inset(20% 0 60% 0);transform:translateX(4px);}92%{clip-path:inset(60% 0 20% 0);transform:translateX(-2px);}}
+    @keyframes glitch-blue{0%,85%,100%{clip-path:inset(20% 0 70% 0);transform:translateX(0);}86%{clip-path:inset(50% 0 30% 0);transform:translateX(-4px);}87%{clip-path:inset(10% 0 80% 0);transform:translateX(3px);}}
+    ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:#000;}::-webkit-scrollbar-thumb{background:#FF0000;}
+    .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 4px);pointer-events:none;z-index:1;}
+    .panic-big{display:block;width:100%;background:#FF0000;border:none;color:#fff;font-family:'VT323',monospace;font-size:2.2rem;letter-spacing:0.2em;padding:1.2rem;cursor:pointer;text-align:center;text-decoration:none;position:relative;z-index:100;animation:warn-pulse 1.5s infinite;}
+    .nav{display:flex;gap:0;position:relative;z-index:10;border-bottom:1px solid #001a00;}
+    .nav a{flex:1;text-align:center;padding:0.5rem 0.2rem;font-family:'VT323',monospace;font-size:0.95rem;color:#004400;text-decoration:none;letter-spacing:0.1em;border-right:1px solid #001a00;transition:all 0.2s;}
+    .nav a:last-child{border-right:none;}
+    .nav a:hover,.nav a.active{color:#00FF00;background:rgba(0,255,0,0.05);}
+    .outer{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;padding:1.5rem 1rem 2rem;}
+    .panel{width:100%;max-width:700px;position:relative;z-index:2;padding:1.5rem;border:1px solid #FF0000;box-shadow:0 0 20px rgba(255,0,0,0.15);}
+    .corner{position:absolute;width:16px;height:16px;z-index:3;}
+    .title-wrap{position:relative;text-align:center;margin-bottom:1rem;user-select:none;z-index:1;}
+    .title-main{font-family:'VT323',monospace;font-size:clamp(2rem,7vw,3.5rem);color:#FF0000;letter-spacing:0.08em;line-height:1.1;position:relative;display:inline-block;animation:title-glitch 3s infinite;text-shadow:0 0 10px #FF000099,0 0 20px #FF000066;}
+    .glitch-r{position:absolute;inset:0;color:#FF6600;clip-path:inset(40% 0 50% 0);animation:glitch-red 2.5s infinite;left:3px;top:-1px;opacity:0.7;white-space:nowrap;}
+    .glitch-b{position:absolute;inset:0;color:#FF0066;clip-path:inset(20% 0 70% 0);animation:glitch-blue 2s infinite;left:-3px;top:1px;opacity:0.7;white-space:nowrap;}
+    .status-bar{font-family:'VT323',monospace;font-size:0.85rem;color:#440000;letter-spacing:0.15em;margin-bottom:1rem;text-align:center;border:1px solid #1a0000;padding:0.4rem;}
+    #map{width:100%;height:60vh;min-height:350px;border:1px solid #FF0000;position:relative;z-index:2;filter:saturate(0.3) brightness(0.7) hue-rotate(100deg);}
+    .map-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;border:1px solid #FF000044;z-index:3;}
+    .map-wrap{position:relative;margin-bottom:1rem;}
+    .locate-btn{display:block;width:100%;background:rgba(0,0,0,0.9);border:2px solid #FF0000;color:#FF0000;font-family:'VT323',monospace;font-size:1.5rem;letter-spacing:0.2em;padding:0.8rem;cursor:pointer;text-align:center;margin-bottom:1rem;transition:all 0.2s;}
+    .locate-btn:hover,.locate-btn:active{background:rgba(255,0,0,0.1);box-shadow:0 0 15px #FF000066;}
+    .results-title{font-family:'VT323',monospace;font-size:0.85rem;color:#440000;letter-spacing:0.2em;margin-bottom:0.6rem;}
+    .sor-list{display:flex;flex-direction:column;gap:0.6rem;}
+    .sor-card{border:1px solid #330000;padding:0.8rem;background:rgba(255,0,0,0.03);display:flex;justify-content:space-between;align-items:center;gap:0.8rem;}
+    .sor-info{flex:1;}
+    .sor-name{font-family:'VT323',monospace;font-size:1.1rem;color:#FF4400;letter-spacing:0.05em;}
+    .sor-addr{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:#440000;margin-top:0.2rem;line-height:1.4;}
+    .sor-dist{font-family:'VT323',monospace;font-size:1rem;color:#FF0000;white-space:nowrap;}
+    .sor-nav{display:block;background:#FF0000;color:#fff;font-family:'VT323',monospace;font-size:0.9rem;padding:0.4rem 0.7rem;text-decoration:none;white-space:nowrap;letter-spacing:0.1em;}
+    .info-note{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#440000;line-height:1.6;border:1px solid #1a0000;padding:0.8rem;margin-top:1rem;}
+    .call-btn{display:block;width:100%;background:#FF0000;border:none;color:#fff;font-family:'VT323',monospace;font-size:2.5rem;letter-spacing:0.2em;padding:1.2rem;cursor:pointer;text-align:center;text-decoration:none;margin-top:1rem;}
+    .footer{position:relative;z-index:2;max-width:700px;width:100%;padding-top:1rem;text-align:center;}
+    .footer p{font-size:0.62rem;color:#330000;letter-spacing:0.05em;line-height:1.6;font-style:italic;}
+    .leaflet-container{background:#0a0a0a;}
+    .leaflet-popup-content-wrapper{background:#0d0d0d;border:1px solid #FF0000;color:#FF4400;font-family:'VT323',monospace;font-size:1rem;border-radius:0;}
+    .leaflet-popup-tip{background:#FF0000;}
+    .leaflet-popup-close-button{color:#FF0000 !important;}
+  </style>
+</head>
+<body>
+<a class="panic-big" href="tel:112">&#9888;&#65039; PANIC — ZADZWON 112 TERAZ</a>
+<nav class="nav">
+  <a href="/">GLOWNA</a>
+  <a href="/kalkulator/">KALKULATOR</a>
+  <a href="/interakcje/">INTERAKCJE</a>
+  <a href="/pomoc/">POMOC</a>
+  <a href="/sor/" class="active">MAPA SOR</a>
+</nav>
+<div class="scanlines"></div>
+<div class="outer">
+  <div class="panel">
+    <div class="corner" style="top:0;left:0;border-top:2px solid #FF0000;border-left:2px solid #FF0000;"></div>
+    <div class="corner" style="top:0;right:0;border-top:2px solid #FF0000;border-right:2px solid #FF0000;"></div>
+    <div class="corner" style="bottom:0;left:0;border-bottom:2px solid #FF0000;border-left:2px solid #FF0000;"></div>
+    <div class="corner" style="bottom:0;right:0;border-bottom:2px solid #FF0000;border-right:2px solid #FF0000;"></div>
+
+    <div class="title-wrap">
+      <div class="title-main">
+        MAPA SOR
+        <span class="glitch-r">MAPA SOR</span>
+        <span class="glitch-b">MAPA SOR</span>
+      </div>
+    </div>
+
+    <div class="status-bar" id="statusBar">// KLIKNIJ PRZYCISK BY ZNALEZC NAJBLIZSZE SOR</div>
+
+    <button class="locate-btn" id="locateBtn">&#128205; ZNAJDZ MOJA LOKALIZACJE</button>
+
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="map-overlay"></div>
+    </div>
+
+    <div id="sorResults" style="display:none;">
+      <div class="results-title">NAJBLIZSZE SZPITALNE ODDZIALY RATUNKOWE</div>
+      <div class="sor-list" id="sorList"></div>
+    </div>
+
+    <div class="info-note">
+      &#9888; Lista SOR pochodzi z OpenStreetMap. Moze byc niepelna. W razie watpliwosci zadzwon pod 112 — dyspozytor skieruje do wlasciwej placowki.<br><br>
+      &#128222; Pod numerem 112 mozesz takze zapytac o najblizszy SOR jesli mapa nie dziala.
+    </div>
+
+    <a class="call-btn" href="tel:112">&#128222; DZWON 112</a>
+  </div>
+  <div class="footer"><p>W stanie zagrozenia zycia nie traci czasu na mape — dzwon 112. Ratownicy wiedza gdzie jechac.</p></div>
+</div>
+
+<script>
+var map = L.map('map', {
+  center: [52.0, 19.0],
+  zoom: 6,
+  zoomControl: true
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: 'OpenStreetMap',
+  maxZoom: 18
+}).addTo(map);
+
+var userMarker = null;
+var sorMarkers = [];
+var userLat = null;
+var userLon = null;
+
+var redIcon = L.divIcon({
+  html: '<div style="background:#FF0000;width:14px;height:14px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 8px #FF0000;"></div>',
+  iconSize:[14,14], iconAnchor:[7,7], className:''
+});
+
+var userIcon = L.divIcon({
+  html: '<div style="background:#00FF00;width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 10px #00FF00;animation:warn-pulse 1.5s infinite;"></div>',
+  iconSize:[16,16], iconAnchor:[8,8], className:''
+});
+
+function deg2rad(d){return d*(Math.PI/180);}
+function getDistance(lat1,lon1,lat2,lon2){
+  var R=6371;
+  var dLat=deg2rad(lat2-lat1);
+  var dLon=deg2rad(lon2-lon1);
+  var a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(deg2rad(lat1))*Math.cos(deg2rad(lat2))*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function clearSorMarkers(){
+  sorMarkers.forEach(function(m){map.removeLayer(m);});
+  sorMarkers=[];
+}
+
+function searchSOR(lat,lon){
+  document.getElementById('statusBar').textContent='// SZUKAM NAJBLIZSZYCH SOR...';
+  var radius=30000;
+  var query='[out:json][timeout:25];(node["emergency"="emergency_ward_entrance"](around:'+radius+','+lat+','+lon+');node["amenity"="hospital"]["emergency"="yes"](around:'+radius+','+lat+','+lon+');way["amenity"="hospital"]["emergency"="yes"](around:'+radius+','+lat+','+lon+');relation["amenity"="hospital"]["emergency"="yes"](around:'+radius+','+lat+','+lon+'););out center;';
+
+  fetch('https://overpass-api.de/api/interpreter',{
+    method:'POST',
+    body:'data='+encodeURIComponent(query)
+  })
+  .then(function(r){return r.json();})
+  .then(function(data){
+    clearSorMarkers();
+    var elements=data.elements||[];
+
+    // dedupe by name+lat
+    var seen={};
+    var hospitals=[];
+    elements.forEach(function(el){
+      var elLat=el.lat||(el.center&&el.center.lat);
+      var elLon=el.lon||(el.center&&el.center.lon);
+      if(!elLat||!elLon)return;
+      var name=el.tags&&el.tags.name?el.tags.name:'SOR';
+      var key=name+Math.round(elLat*100)+Math.round(elLon*100);
+      if(seen[key])return;
+      seen[key]=true;
+      var dist=getDistance(lat,lon,elLat,elLon);
+      var addr='';
+      if(el.tags){
+        if(el.tags['addr:street'])addr+=el.tags['addr:street'];
+        if(el.tags['addr:housenumber'])addr+=' '+el.tags['addr:housenumber'];
+        if(el.tags['addr:city'])addr+=(addr?', ':'')+el.tags['addr:city'];
+      }
+      hospitals.push({name:name,lat:elLat,lon:elLon,dist:dist,addr:addr||'brak adresu'});
+    });
+
+    hospitals.sort(function(a,b){return a.dist-b.dist;});
+    var top=hospitals.slice(0,8);
+
+    if(top.length===0){
+      document.getElementById('statusBar').textContent='// BRAK WYNIKOW — POWIEKSZ OBSZAR LUB ZADZWON 112';
+      return;
+    }
+
+    document.getElementById('statusBar').textContent='// ZNALEZIONO '+top.length+' SOR W POBLIZU';
+
+    top.forEach(function(h,i){
+      var m=L.marker([h.lat,h.lon],{icon:redIcon}).addTo(map);
+      m.bindPopup('<strong>'+(i+1)+'. '+h.name+'</strong><br>'+parseFloat(h.dist.toFixed(1))+' km');
+      sorMarkers.push(m);
+    });
+
+    var group=L.featureGroup(sorMarkers.concat(userMarker?[userMarker]:[]));
+    map.fitBounds(group.getBounds().pad(0.2));
+
+    // render list
+    var list=document.getElementById('sorList');
+    list.innerHTML='';
+    top.forEach(function(h,i){
+      var distStr=h.dist<1?(Math.round(h.dist*1000)+'m'):(parseFloat(h.dist.toFixed(1))+'km');
+      var navUrl='https://www.google.com/maps/dir/?api=1&destination='+h.lat+','+h.lon+'&travelmode=driving';
+      var card=document.createElement('div');
+      card.className='sor-card';
+      card.innerHTML='<div class="sor-info"><div class="sor-name">'+(i+1)+'. '+h.name+'</div><div class="sor-addr">'+h.addr+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.4rem;"><div class="sor-dist">'+distStr+'</div><a class="sor-nav" href="'+navUrl+'" target="_blank">NAWIGUJ</a></div>';
+      card.addEventListener('click',function(){
+        map.setView([h.lat,h.lon],15);
+        sorMarkers[i].openPopup();
+      });
+      list.appendChild(card);
+    });
+    document.getElementById('sorResults').style.display='block';
+  })
+  .catch(function(){
+    document.getElementById('statusBar').textContent='// BLAD SIECI — ZADZWON 112';
+  });
+}
+
+document.getElementById('locateBtn').addEventListener('click',function(){
+  if(!navigator.geolocation){
+    document.getElementById('statusBar').textContent='// BRAK GPS — ZADZWON 112';
+    return;
+  }
+  document.getElementById('statusBar').textContent='// POBIERANIE LOKALIZACJI...';
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      userLat=pos.coords.latitude;
+      userLon=pos.coords.longitude;
+      if(userMarker)map.removeLayer(userMarker);
+      userMarker=L.marker([userLat,userLon],{icon:userIcon}).addTo(map);
+      userMarker.bindPopup('<strong>TWOJA LOKALIZACJA</strong>').openPopup();
+      map.setView([userLat,userLon],13);
+      searchSOR(userLat,userLon);
+    },
+    function(){
+      document.getElementById('statusBar').textContent='// BRAK DOSTEPU DO GPS — ZADZWON 112';
+    },
+    {enableHighAccuracy:true,timeout:10000}
+  );
+});
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+</script>
+</body>
+</html>
