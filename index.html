@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Harm Reduction</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#000000"/>
+  <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#000;min-height:100vh;font-family:'JetBrains Mono',monospace;color:#00FF00;}
+    @keyframes fall{0%{transform:translateY(-40px) rotate(0deg);opacity:0;}8%{opacity:1;}90%{opacity:1;}100%{transform:translateY(900px) rotate(12deg);opacity:0;}}
+    @keyframes title-glitch{0%,92%,100%{transform:skewX(0deg);}93%{transform:skewX(-3deg);}94%{transform:skewX(2deg);}}
+    @keyframes glitch-red{0%,90%,100%{clip-path:inset(40% 0 50% 0);transform:translateX(0);}91%{clip-path:inset(20% 0 60% 0);transform:translateX(4px);}92%{clip-path:inset(60% 0 20% 0);transform:translateX(-2px);}}
+    @keyframes glitch-blue{0%,85%,100%{clip-path:inset(20% 0 70% 0);transform:translateX(0);}86%{clip-path:inset(50% 0 30% 0);transform:translateX(-4px);}87%{clip-path:inset(10% 0 80% 0);transform:translateX(3px);}}
+    @keyframes neon-pulse{0%,100%{text-shadow:0 0 10px #00FF00,0 0 20px #00FF00;}50%{text-shadow:0 0 4px #00FF00;}}
+    @keyframes card-hover{0%,100%{box-shadow:0 0 10px rgba(0,255,0,0.1);}50%{box-shadow:0 0 20px rgba(0,255,0,0.25);}}
+    ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:#000;}::-webkit-scrollbar-thumb{background:#00FF00;}
+    .panic-small{display:block;width:100%;background:#FF0000;border:none;color:#fff;font-family:'VT323',monospace;font-size:1.3rem;letter-spacing:0.2em;padding:0.6rem;cursor:pointer;text-align:center;text-decoration:none;position:relative;z-index:100;}
+    .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 4px);pointer-events:none;z-index:0;}
+    .outer{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;}
+    .panel{width:100%;max-width:680px;position:relative;z-index:1;padding:2rem;border:1px solid #00FF00;box-shadow:0 0 20px rgba(0,255,0,0.1);overflow:hidden;}
+    .rain-wrap{position:absolute;inset:0;overflow:hidden;z-index:0;pointer-events:none;}
+    .corner{position:absolute;width:16px;height:16px;z-index:2;}
+    .title-wrap{position:relative;text-align:center;margin-bottom:2rem;user-select:none;z-index:1;}
+    .title-main{font-family:'VT323',monospace;font-size:clamp(2.5rem,8vw,5rem);color:#00FF00;letter-spacing:0.08em;line-height:1.1;position:relative;display:inline-block;animation:title-glitch 3s infinite;text-shadow:0 0 10px #00FF00,0 0 20px #00FF00;}
+    .glitch-r{position:absolute;inset:0;color:#FF0000;clip-path:inset(40% 0 50% 0);animation:glitch-red 2.5s infinite;left:3px;top:-1px;opacity:0.7;white-space:nowrap;}
+    .glitch-b{position:absolute;inset:0;color:#0066FF;clip-path:inset(20% 0 70% 0);animation:glitch-blue 2s infinite;left:-3px;top:1px;opacity:0.7;white-space:nowrap;}
+    .subtitle{font-family:'VT323',monospace;font-size:1rem;color:#004400;letter-spacing:0.25em;margin-top:0.3rem;}
+    .quote{font-family:'VT323',monospace;font-size:0.85rem;color:#004400;letter-spacing:0.06em;margin-bottom:2rem;border-top:1px solid #001a00;border-bottom:1px solid #001a00;padding:0.5rem;text-align:center;font-style:italic;position:relative;z-index:1;}
+    .cards{display:grid;grid-template-columns:1fr 1fr;gap:1rem;position:relative;z-index:1;}
+    @media(max-width:480px){.cards{grid-template-columns:1fr;}}
+    .card{display:block;text-decoration:none;border:1px solid #00FF00;padding:1.5rem 1rem;text-align:center;background:rgba(0,0,0,0.7);transition:all 0.2s;animation:card-hover 3s infinite;}
+    .card:hover,.card:active{background:rgba(0,255,0,0.08);box-shadow:0 0 25px rgba(0,255,0,0.3);}
+    .card-icon{font-size:2.5rem;margin-bottom:0.5rem;display:block;}
+    .card-title{font-family:'VT323',monospace;font-size:1.6rem;color:#00FF00;letter-spacing:0.1em;display:block;text-shadow:0 0 8px #00FF00;}
+    .card-desc{font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:#004400;margin-top:0.3rem;display:block;line-height:1.4;}
+    .card-sor{border-color:#FF0000;animation:none;}
+    .card-sor .card-title{color:#FF0000;text-shadow:0 0 8px #FF0000;}
+    .card-sor:hover{background:rgba(255,0,0,0.08);box-shadow:0 0 25px rgba(255,0,0,0.3);}
+    .card-pomoc{border-color:#FFD700;}
+    .card-pomoc .card-title{color:#FFD700;text-shadow:0 0 8px #FFD700;}
+    .card-pomoc:hover{background:rgba(255,215,0,0.08);box-shadow:0 0 25px rgba(255,215,0,0.3);}
+    .footer{position:relative;z-index:1;max-width:680px;width:100%;padding-top:1rem;text-align:center;}
+    .footer p{font-size:0.62rem;color:#003300;letter-spacing:0.05em;line-height:1.6;font-style:italic;}
+  </style>
+</head>
+<body>
+<a class="panic-small" href="tel:112">&#9888; PANIC — ZADZWON 112</a>
+<div class="scanlines"></div>
+<div class="outer">
+  <div class="panel" id="panel">
+    <div class="rain-wrap" id="rain"></div>
+    <div class="corner" style="top:0;left:0;border-top:2px solid #00FF00;border-left:2px solid #00FF00;"></div>
+    <div class="corner" style="top:0;right:0;border-top:2px solid #00FF00;border-right:2px solid #00FF00;"></div>
+    <div class="corner" style="bottom:0;left:0;border-bottom:2px solid #00FF00;border-left:2px solid #00FF00;"></div>
+    <div class="corner" style="bottom:0;right:0;border-bottom:2px solid #00FF00;border-right:2px solid #00FF00;"></div>
+
+    <div class="title-wrap">
+      <div class="title-main">
+        HARM REDUCTION
+        <span class="glitch-r">HARM REDUCTION</span>
+        <span class="glitch-b">HARM REDUCTION</span>
+      </div>
+      <div class="subtitle">// WIEDZA REDUKUJE RYZYKO //</div>
+    </div>
+
+    <div class="quote">It's better to be high thinking about God than sober thinking about weed</div>
+
+    <div class="cards">
+      <a class="card" href="/kalkulator/">
+        <span class="card-icon">&#x1F48A;</span>
+        <span class="card-title">KALKULATOR</span>
+        <span class="card-desc">Dawki substancji dobrane do wagi i tolerancji</span>
+      </a>
+      <a class="card" href="/interakcje/">
+        <span class="card-icon">&#x26A0;</span>
+        <span class="card-title">INTERAKCJE</span>
+        <span class="card-desc">Sprawdz czy mieszanie jest bezpieczne</span>
+      </a>
+      <a class="card card-pomoc" href="/pomoc/">
+        <span class="card-icon">&#x1F6A8;</span>
+        <span class="card-title">POMOC</span>
+        <span class="card-desc">Jak rozpoznac i co robic przy przedawkowaniu</span>
+      </a>
+      <a class="card card-sor" href="/sor/">
+        <span class="card-icon">&#x1F3E5;</span>
+        <span class="card-title">MAPA SOR</span>
+        <span class="card-desc">Najblizsze szpitalne oddzialy ratunkowe</span>
+      </a>
+    </div>
+  </div>
+  <div class="footer"><p>Strona ma charakter informacyjny i edukacyjny. W razie zagrozenia zycia dzwon pod 112.</p></div>
+</div>
+<script>
+function makePill(color,size){
+  const ns="http://www.w3.org/2000/svg";
+  const svg=document.createElementNS(ns,"svg");
+  svg.setAttribute("width",size);svg.setAttribute("height",size*0.5);
+  svg.setAttribute("viewBox","0 0 60 30");svg.setAttribute("fill","none");
+  svg.setAttribute("stroke",color);svg.setAttribute("stroke-width","2.5");
+  const r=document.createElementNS(ns,"rect");
+  r.setAttribute("x","2");r.setAttribute("y","2");r.setAttribute("width","56");r.setAttribute("height","26");r.setAttribute("rx","13");
+  const l=document.createElementNS(ns,"line");
+  l.setAttribute("x1","30");l.setAttribute("y1","2");l.setAttribute("x2","30");l.setAttribute("y2","28");
+  svg.appendChild(r);svg.appendChild(l);return svg;
+}
+const rain=document.getElementById("rain");
+const colors=["#FF0000","#FFD700","#00FF00"];
+for(let i=0;i<24;i++){
+  const w=document.createElement("div");
+  const c=colors[i%3];
+  w.style.cssText=`position:absolute;left:${(i*4.1)%95}%;top:-40px;animation:fall ${6+(i%5)}s linear ${(i*0.41)%8}s infinite;pointer-events:none;filter:drop-shadow(0 0 3px ${c});`;
+  w.appendChild(makePill(c,24));
+  rain.appendChild(w);
+}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
