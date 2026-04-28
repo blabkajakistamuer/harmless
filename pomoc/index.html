@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pomoc przy Przedawkowaniu</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#000000"/>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#000;min-height:100vh;font-family:'JetBrains Mono',monospace;color:#00FF00;}
+    @keyframes fall{0%{transform:translateY(-40px) rotate(0deg);opacity:0;}8%{opacity:1;}90%{opacity:1;}100%{transform:translateY(900px) rotate(12deg);opacity:0;}}
+    @keyframes title-glitch{0%,92%,100%{transform:skewX(0deg);}93%{transform:skewX(-3deg);}94%{transform:skewX(2deg);}}
+    @keyframes glitch-red{0%,90%,100%{clip-path:inset(40% 0 50% 0);transform:translateX(0);}91%{clip-path:inset(20% 0 60% 0);transform:translateX(4px);}92%{clip-path:inset(60% 0 20% 0);transform:translateX(-2px);}}
+    @keyframes glitch-blue{0%,85%,100%{clip-path:inset(20% 0 70% 0);transform:translateX(0);}86%{clip-path:inset(50% 0 30% 0);transform:translateX(-4px);}87%{clip-path:inset(10% 0 80% 0);transform:translateX(3px);}}
+    @keyframes warn-pulse{0%,100%{box-shadow:0 0 15px #FF000066;}50%{box-shadow:0 0 35px #FF0000CC;}}
+    @keyframes breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.02);}}
+    @keyframes slide-in{0%{opacity:0;transform:translateY(12px);filter:blur(4px);}100%{opacity:1;transform:translateY(0);filter:blur(0);}}
+    ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:#000;}::-webkit-scrollbar-thumb{background:#FF0000;}
+    .scanlines{position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.08) 3px,rgba(0,0,0,0.08) 4px);pointer-events:none;z-index:0;}
+
+    /* PANIC BIG */
+    .panic-big{display:block;width:100%;background:#FF0000;border:none;color:#fff;font-family:'VT323',monospace;font-size:2.2rem;letter-spacing:0.2em;padding:1.2rem;cursor:pointer;text-align:center;text-decoration:none;position:relative;z-index:100;animation:warn-pulse 1.5s infinite;}
+
+    /* NAV */
+    .nav{display:flex;gap:0;position:relative;z-index:10;border-bottom:1px solid #001a00;}
+    .nav a{flex:1;text-align:center;padding:0.5rem 0.2rem;font-family:'VT323',monospace;font-size:0.95rem;color:#004400;text-decoration:none;letter-spacing:0.1em;border-right:1px solid #001a00;transition:all 0.2s;}
+    .nav a:last-child{border-right:none;}
+    .nav a:hover,.nav a.active{color:#00FF00;background:rgba(0,255,0,0.05);}
+
+    .outer{position:relative;z-index:1;min-height:calc(100vh - 120px);display:flex;flex-direction:column;align-items:center;padding:1.5rem 1rem 3rem;}
+    .panel{width:100%;max-width:700px;position:relative;z-index:1;padding:2rem;border:1px solid #FFD700;box-shadow:0 0 20px rgba(255,215,0,0.1);overflow:hidden;}
+    .rain-wrap{position:absolute;inset:0;overflow:hidden;z-index:0;pointer-events:none;}
+    .corner{position:absolute;width:16px;height:16px;z-index:2;}
+    .title-wrap{position:relative;text-align:center;margin-bottom:1.5rem;user-select:none;z-index:1;}
+    .title-main{font-family:'VT323',monospace;font-size:clamp(2rem,7vw,4rem);color:#FFD700;letter-spacing:0.08em;line-height:1.1;position:relative;display:inline-block;animation:title-glitch 3s infinite;text-shadow:0 0 10px #FFD700,0 0 20px #FFD700;}
+    .glitch-r{position:absolute;inset:0;color:#FF0000;clip-path:inset(40% 0 50% 0);animation:glitch-red 2.5s infinite;left:3px;top:-1px;opacity:0.7;white-space:nowrap;}
+    .glitch-b{position:absolute;inset:0;color:#FF8800;clip-path:inset(20% 0 70% 0);animation:glitch-blue 2s infinite;left:-3px;top:1px;opacity:0.7;white-space:nowrap;}
+
+    /* Substance selector */
+    .sel-label{font-family:'VT323',monospace;font-size:0.85rem;color:#AA8800;letter-spacing:0.2em;margin-bottom:0.4rem;position:relative;z-index:1;}
+    .sel-wrap{position:relative;z-index:1;margin-bottom:1.5rem;}
+    .sel-inner{position:relative;}
+    select{width:100%;background:rgba(0,0,0,0.8);border:1px solid #FFD700;color:#FFD700;font-family:'VT323',monospace;font-size:1.3rem;padding:0.8rem 2rem 0.8rem 0.8rem;cursor:pointer;appearance:none;-webkit-appearance:none;letter-spacing:0.05em;outline:none;}
+    select:focus{box-shadow:0 0 12px rgba(255,215,0,0.4);}
+    .sel-arrow{position:absolute;right:0.7rem;top:50%;transform:translateY(-50%);color:#FFD700;pointer-events:none;font-size:0.9rem;}
+
+    /* Content blocks */
+    .content-area{position:relative;z-index:1;}
+    .section{margin-bottom:1.2rem;animation:slide-in 0.4s ease forwards;}
+    .section-title{font-family:'VT323',monospace;font-size:1.5rem;letter-spacing:0.15em;margin-bottom:0.8rem;padding-bottom:0.4rem;}
+    .section-title.red{color:#FF0000;border-bottom:1px solid #330000;text-shadow:0 0 10px #FF000066;}
+    .section-title.yellow{color:#FFD700;border-bottom:1px solid #332200;text-shadow:0 0 10px #FFD70066;}
+    .section-title.green{color:#00FF00;border-bottom:1px solid #003300;text-shadow:0 0 10px #00FF0066;}
+
+    .symptom-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;margin-bottom:0.8rem;}
+    @media(max-width:480px){.symptom-grid{grid-template-columns:1fr;}}
+    .symptom-card{border:1px solid #331100;padding:0.7rem;background:rgba(255,100,0,0.04);}
+    .symptom-label{font-family:'VT323',monospace;font-size:0.75rem;color:#664400;letter-spacing:0.15em;margin-bottom:0.3rem;}
+    .symptom-value{font-family:'VT323',monospace;font-size:1.1rem;color:#FF6600;}
+
+    .step{display:flex;gap:0.8rem;margin-bottom:0.7rem;padding:0.8rem;border:1px solid #002200;background:rgba(0,255,0,0.02);}
+    .step-num{font-family:'VT323',monospace;font-size:2rem;color:#00FF00;line-height:1;min-width:32px;text-align:center;opacity:0.6;}
+    .step-text{font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:#008800;line-height:1.7;}
+    .step-text strong{color:#00FF00;display:block;margin-bottom:0.2rem;font-size:0.8rem;}
+
+    .alert-box{border:1px solid #FF0000;padding:1rem;background:rgba(255,0,0,0.06);margin-bottom:1rem;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#FF0000;line-height:1.7;animation:warn-pulse 2s infinite;}
+    .info-box{border:1px solid #FFD700;padding:1rem;background:rgba(255,215,0,0.04);margin-bottom:1rem;font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#AA8800;line-height:1.7;}
+    .cpr-box{border:2px solid #FF0000;padding:1.2rem;background:rgba(255,0,0,0.08);margin-bottom:1rem;animation:warn-pulse 1.5s infinite;}
+    .cpr-title{font-family:'VT323',monospace;font-size:2rem;color:#FF0000;text-align:center;letter-spacing:0.1em;margin-bottom:0.8rem;text-shadow:0 0 15px #FF0000;}
+    .cpr-note{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:#FF0000;text-align:center;margin-top:0.8rem;font-style:italic;line-height:1.6;border-top:1px solid #330000;padding-top:0.6rem;}
+
+    .recovery-box{border:2px solid #FFD700;padding:1.2rem;background:rgba(255,215,0,0.05);margin-bottom:1rem;}
+    .recovery-title{font-family:'VT323',monospace;font-size:1.8rem;color:#FFD700;text-align:center;letter-spacing:0.1em;margin-bottom:0.8rem;text-shadow:0 0 15px #FFD70066;}
+
+    .script-box{border:1px solid #00FF00;padding:1rem;background:rgba(0,255,0,0.03);margin-bottom:1rem;}
+    .script-title{font-family:'VT323',monospace;font-size:1rem;color:#00AA44;letter-spacing:0.2em;margin-bottom:0.8rem;}
+    .script-line{display:flex;gap:0.6rem;margin-bottom:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.72rem;line-height:1.6;}
+    .script-num{color:#004400;min-width:16px;}
+    .script-text{color:#008800;}
+    .script-text span{color:#00FF00;}
+
+    .call-btn{display:block;width:100%;background:#FF0000;border:none;color:#fff;font-family:'VT323',monospace;font-size:3rem;letter-spacing:0.2em;padding:1.5rem;cursor:pointer;text-align:center;text-decoration:none;margin-top:1rem;animation:breathe 2s infinite;text-shadow:0 0 20px rgba(255,255,255,0.5);}
+
+    .placeholder{padding:3rem;text-align:center;font-family:'VT323',monospace;font-size:1rem;color:#003300;letter-spacing:0.2em;border:1px solid #001a00;background:rgba(0,10,0,0.4);}
+
+    .footer{position:relative;z-index:1;max-width:700px;width:100%;padding-top:1rem;text-align:center;}
+    .footer p{font-size:0.62rem;color:#333300;letter-spacing:0.05em;line-height:1.6;font-style:italic;}
+  </style>
+</head>
+<body>
+<!-- PANIC BIG -->
+<a class="panic-big" href="tel:112">&#9888;&#65039; PANIC — ZADZWON 112 TERAZ</a>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="/">GLOWNA</a>
+  <a href="/kalkulator/">KALKULATOR</a>
+  <a href="/interakcje/">INTERAKCJE</a>
+  <a href="/pomoc/" class="active">POMOC</a>
+  <a href="/sor/">MAPA SOR</a>
+</nav>
+
+<div class="scanlines"></div>
+<div class="outer">
+  <div class="panel">
+    <div class="rain-wrap" id="rain"></div>
+    <div class="corner" style="top:0;left:0;border-top:2px solid #FFD700;border-left:2px solid #FFD700;"></div>
+    <div class="corner" style="top:0;right:0;border-top:2px solid #FFD700;border-right:2px solid #FFD700;"></div>
+    <div class="corner" style="bottom:0;left:0;border-bottom:2px solid #FFD700;border-left:2px solid #FFD700;"></div>
+    <div class="corner" style="bottom:0;right:0;border-bottom:2px solid #FFD700;border-right:2px solid #FFD700;"></div>
+
+    <div class="title-wrap">
+      <div class="title-main">
+        PIERWSZA POMOC
+        <span class="glitch-r">PIERWSZA POMOC</span>
+        <span class="glitch-b">PIERWSZA POMOC</span>
+      </div>
+    </div>
+
+    <div class="sel-wrap">
+      <div class="sel-label">wybierz substancje</div>
+      <div class="sel-inner">
+        <select id="subSel">
+          <option value="">// wybierz substancje</option>
+          <option value="alkohol">Alkohol</option>
+          <option value="benzodiazepiny">Benzodiazepiny (Xanax, Relanium, Klonazepam)</option>
+          <option value="opioidy">Opioidy (Kodeina, Tramadol, Morfina, Oksykodon)</option>
+          <option value="mdma">MDMA / Ecstasy</option>
+          <option value="lsd">LSD / Psychodeliki</option>
+          <option value="marihuana">Marihuana / THC</option>
+          <option value="ketamina">Ketamina</option>
+        </select>
+        <span class="sel-arrow">&#9660;</span>
+      </div>
+    </div>
+
+    <div class="content-area" id="content">
+      <div class="placeholder">// wybierz substancje powyzej</div>
+    </div>
+
+    <!-- SCRIPT 112 - always visible after selection -->
+    <div id="script112" style="display:none;position:relative;z-index:1;">
+      <div class="script-box">
+        <div class="script-title">CO POWIEDZIEC DYSPOZYTOROWI 112</div>
+        <div class="script-line"><span class="script-num">1.</span><span class="script-text">LOKALIZACJA: <span>"Jestem w [miasto, ulica, punkt orientacyjny]"</span></span></div>
+        <div class="script-line"><span class="script-num">2.</span><span class="script-text">STAN: <span>"Osoba jest nieprzytomna, [oddycha / nie oddycha]"</span></span></div>
+        <div class="script-line"><span class="script-num">3.</span><span class="script-text">POWOD: <span>"Prawdopodobne przedawkowanie [nazwa substancji]"</span></span></div>
+        <div class="script-line"><span class="script-num">4.</span><span class="script-text">DZIALANIE: <span>"Robie masaz serca / ulozylam w pozycji bocznej"</span></span></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#004400;margin-top:0.6rem;line-height:1.6;">Dyspozytor poprowadzi Cie krok po kroku. Nie rozlaczaj sie. Mow spokojnie.</div>
+      </div>
+      <a class="call-btn" href="tel:112">&#128222; DZWON 112</a>
+    </div>
+  </div>
+  <div class="footer"><p>Strona ma charakter informacyjny i edukacyjny. W razie zagrozenia zycia natychmiast dzwon pod 112.</p></div>
+</div>
+
+<script>
+var DATA = {
+  alkohol: {
+    color: "#FF6600",
+    recognize: {
+      title: "JAK ROZPOZNAC PRZEDAWKOWANIE ALKOHOLU",
+      symptoms: [
+        {label:"ODDECH", value:"Wolny, glosny, nieregularny"},
+        {label:"SWIADOMOSC", value:"Brak reakcji, nie mozna wybudzic"},
+        {label:"SKORA", value:"Blada, sinawo-szara lub czerwona"},
+        {label:"TEMPERATURA", value:"Wyziebiena lub goraczkowa"},
+        {label:"POZYCJA", value:"Zwiotczale cialo, bez napiec"},
+        {label:"WYMIOTY", value:"Ryzyko zachlysniecia w pozycji na plecach"}
+      ],
+      critical: "NIEBEZPIECZNE: Jesli osoba lezi na plecach i wymiotuje — moze sie zachlysac. To zabija. Natychmiast pozycja boczna."
+    },
+    help: [
+      {title:"Sprawdz oddech i reakcje", text:"Potrzasnij ramionami i glosno zawolaj. Jesli brak reakcji — dzwon 112 natychmiast."},
+      {title:"Pozycja boczna bezpieczna", text:"Uloz na boku. Podloz reke pod glowe. Lekko odchyl glowe do tylu by odkorkowac drogi oddechowe. Monitoruj oddech co 30 sekund."},
+      {title:"Nie zostawiaj samej", text:"Osoba moze prestac oddychac w kazdej chwili. Badz obok i obserwuj klatke piersiowa."},
+      {title:"NIE rob tych rzeczy", text:"Nie podawaj kawy ani wody. Nie wkladaj jej pod prysznic. Nie dawaj jesc. Nie zostawiaj samej zeby 'przelezala'."},
+      {title:"Jesli przestala oddychac", text:"Natychmiast RKO. Poloz telefon na glosnik, dzwon 112, wykonuj masaz serca wg instrukcji ponizej."}
+    ],
+    cpr: true,
+    recovery: true
+  },
+  benzodiazepiny: {
+    color: "#FF6600",
+    recognize: {
+      title: "JAK ROZPOZNAC PRZEDAWKOWANIE BENZODIAZEPIN",
+      symptoms: [
+        {label:"ODDECH", value:"Bardzo wolny, plytki"},
+        {label:"SWIADOMOSC", value:"Splacenie, sen, brak reakcji"},
+        {label:"MOWA", value:"Babelkowanie, niezrozumiala"},
+        {label:"RUCHY", value:"Nieskoordynowane, niestabilnosc"},
+        {label:"ZRENICE", value:"Normalne lub lekko zwezone"},
+        {label:"CZAS", value:"Dziala dlugo — do 12h lub dluzej"}
+      ],
+      critical: "UWAGA: Same benzodiazepiny rzadko sa smiertelne — ale w polaczeniu z alkoholem lub opioidami to KOMBINACJA ZABOJCZA. Zawsze pytaj co jeszcze wziele."
+    },
+    help: [
+      {title:"Sprawdz co wziele", text:"Benzodiazepiny + alkohol lub opioidy = natychmiastowe 112. Nie czekaj na objawy — dzialaj profilaktycznie."},
+      {title:"Pozycja boczna", text:"Jesli oddycha ale jest nieprzytomna — pozycja boczna. Monitoruj oddech przez caly czas."},
+      {title:"Nie wazne ile wziele", text:"Nawet jesli wziele 'malo' — jesli nie reaguje, to jest przedawkowanie. Dzwon 112."},
+      {title:"Informuj ratownikow", text:"Powiedz dokladnie jaka benzodiazepiena i ile. Jesli nie wiesz — pokaz opakowanie lub powiedz szacunkowo."},
+      {title:"Jesli przestala oddychac", text:"Natychmiast RKO. Benzodiazepiny hamuja osrodek oddechowy — mozna to odwrocic Flumazenilem (lek ratownikow)."}
+    ],
+    cpr: true,
+    recovery: true
+  },
+  opioidy: {
+    color: "#FF0000",
+    recognize: {
+      title: "JAK ROZPOZNAC PRZEDAWKOWANIE OPIOIDOW",
+      symptoms: [
+        {label:"ZRENICE", value:"SZPILKOWATE — mniejsze niz glowka od szpilki"},
+        {label:"ODDECH", value:"Bardzo wolny (ponizej 8/min), plytki lub zatrzymany"},
+        {label:"SKORA", value:"Sina, blada, lodowata, wilgotna"},
+        {label:"SWIADOMOSC", value:"Brak reakcji, nie do wybudzenia"},
+        {label:"MOWA", value:"Bulgotanie, rzezenie w gardle"},
+        {label:"MIESNIE", value:"Calkowite zwiotczenie"}
+      ],
+      critical: "SZPILKOWATE ZRENICE + WOLNY ODDECH + NIEPRZYTOMNOSC = PRZEDAWKOWANIE OPIOIDOW. Dzwon 112 i jesli masz NALOKSON — podaj natychmiast."
+    },
+    help: [
+      {title:"112 natychmiast", text:"Nie czekaj. Kazda sekunda bez tlenu niszczy mozg. Mow: 'Przedawkowanie opioidow, osoba nie oddycha'."},
+      {title:"Nalokson jesli masz", text:"Nalokson (Narcan) to antidotum. Spray do nosa lub zastrzyk. Dziala w 2-5 minut. Moze byc konieczna druga dawka. NIE zastepuje wezwania 112 — dzialanie jest tymczasowe."},
+      {title:"Odetchnij za nia", text:"Jesli masz maseczke — 2 oddechy ratownicze co 5 sekund. Jesli nie masz maseczki — sam masaz serca jest lepszy niz nic."},
+      {title:"Pozycja boczna NIE wystarczy", text:"Przy zatrzymaniu oddechu pozycja boczna nie pomoze. Potrzebna RKO lub oddechy ratownicze."},
+      {title:"Po Naloksonie", text:"Osoba moze sie wybudzic agresywnie i chciec uciec. Zatrzymaj ja. Nalokson dziala krotko — opioidy moga zadziałac ponownie po 30-90 min."}
+    ],
+    cpr: true,
+    recovery: false,
+    naloxone: true
+  },
+  mdma: {
+    color: "#FF00FF",
+    recognize: {
+      title: "JAK ROZPOZNAC PRZEDAWKOWANIE MDMA",
+      symptoms: [
+        {label:"TEMPERATURA", value:"Cialo plonace w dotyku, powyzej 39-40C"},
+        {label:"ZRENICE", value:"OGROMNE — wypelniaja cala tekowke"},
+        {label:"SERCE", value:"Bardzo szybkie bicie, arytmia"},
+        {label:"SWIADOMOSC", value:"Dezorientacja, panika, drgawki"},
+        {label:"SKORA", value:"Mokra od potu, czerwona lub sina"},
+        {label:"MOCZ", value:"Brak oddawania moczu lub bardzo ciemny"}
+      ],
+      critical: "HIPERTERMIA (przegrzanie) to glowny zabojca przy MDMA. Temperatura powyzej 40C niszczy organy wewnetrzne w ciagu minut. Chlodzenie = priorytet numer 1."
+    },
+    help: [
+      {title:"Chlodz natychmiast", text:"Wynies z gorącego miejsca. Zdejmij czesc ubran. Mokre reczniki na szyje, pachy, pachwiny — tam sa duze naczynia. Wachluj aktywnie. Zimna woda na glowe."},
+      {title:"Nawodnienie OSTROZNE", text:"Jesli przytomna i moze pic — male lyki wody z elektrolitami co kilka minut. NIE zmuszaj do picia duzo — MDMA moze powodowac hiponatremie (za malo soli we krwi) i wtedy woda zabija."},
+      {title:"Drgawki", text:"Jesli ma drgawki — nie krep. Uloz na boku, odsuń twarde przedmioty. Nie wkladaj nic do ust. Dzwon 112."},
+      {title:"Nie dawaj innych lekow", text:"Nie dawaj paracetamolu (niszczy watrobe w polaczeniu z MDMA). Nie dawaj ibuprofenu. Nie dawaj 'czegos na uspokojenie'."},
+      {title:"112 zawsze przy przegrzaniu", text:"Temperatura powyzej 39C + brak reakcji = ratownicze chlodzenie w szpitalu. Nie mozna tego zrobic w domu."}
+    ],
+    cpr: true,
+    recovery: true
+  },
+  lsd: {
+    color: "#AA00FF",
+    recognize: {
+      title: "JAK ROZPOZNAC ZLY TRIP / KRYZYS NA LSD",
+      symptoms: [
+        {label:"ZRENICE", value:"OGROMNE — cala galkа"},
+        {label:"STAN", value:"Silny lek, panika, przekonanie o smierci"},
+        {label:"ZACHOWANIE", value:"Ucieczka, agresja lub calkowite odretwienie"},
+        {label:"POSTRZEGANIE", value:"Halucynacje nie do odroznienia od rzeczywistosci"},
+        {label:"CIALO", value:"Dreszce, tachykardia, wzmozony pot"},
+        {label:"CZAS", value:"Efekty trwaja 8-12h — nie da sie ich zatrzymac"}
+      ],
+      critical: "LSD rzadko zabija bezposrednio. Glowne zagrozenia to: urazy fizyczne podczas zlego tripu, utonięcie, wypadki. Osoba musi byc bezpieczna fizycznie — to priorytet."
+    },
+    help: [
+      {title:"Bezpieczne miejsce", text:"Przenies w ciche, spokojne, slabo oswietlone miejsce. Mniej bodzców = mniejsza panika. Wylacz glosna muzyke. Odejdz od tlumy."},
+      {title:"Trip Sitting — badz obok", text:"Siedz obok. Mow spokojnie, niskim glosem. 'Jestes bezpieczna. To mija. Jestem z toba.' Nie klocon sie z halucynacjami — nie zaprzeczaj temu co widzi, przekieruj uwage."},
+      {title:"Oddychanie", text:"Prowadz przez powolne oddechy: wdech 4 sekundy, zatrzymaj 4, wydech 6. To aktywuje uklad parasympatyczny i redukuje panikę."},
+      {title:"Nie dawaj benzodiazepin bez wiedzy", text:"Diazepam lub podobne MOGA pomoc przy bardzo zlym tripie — ale tylko jesli wiesz co robisz i znasz dawki. Przypadkowe mieszanie jest niebezpieczne."},
+      {title:"Kiedy dzwonic 112", text:"Dzwon jesli: osoba jest agresywna i zagraza sobie lub innym, traci przytomnosc, ma drgawki, skacze lub chce skakac, lub jesli podejrzewasz ze wziele cos innego niz LSD."}
+    ],
+    cpr: false,
+    recovery: false,
+    tripsit: true
+  },
+  marihuana: {
+    color: "#00AA00",
+    recognize: {
+      title: "JAK ROZPOZNAC KRYZYS PO MARIHUANIE",
+      symptoms: [
+        {label:"ZRENICE", value:"Normalne lub lekko rozszerzone"},
+        {label:"SERCE", value:"Bardzo szybkie bicie, uczucie zawalu"},
+        {label:"STAN", value:"Silny lek, panika, przekonanie o smierci"},
+        {label:"ROWNOWAGA", value:"Zawroty glowy, niemoznosc ustania"},
+        {label:"WYMIOTY", value:"Intensywne wymiotowanie (CHS)"},
+        {label:"ODCZUCIE", value:"Poczucie utraty kontroli nad umyslem"}
+      ],
+      critical: "Marihuana rzadko powoduje zagrozenie zycia bezposrednio. Glowne ryzyko to panika prowadzaca do niebezpiecznych zachowan i przy edibles — silna sedacja u osob bez tolerancji."
+    },
+    help: [
+      {title:"Spokojne miejsce i kontakt", text:"Przenies w ciche miejsce. Połóż sie lub usiądz wygodnie. Trzymaj za reke. Mow: 'To mija. Jestes bezpieczna. Nikt nie umarl od marihuany.'"},
+      {title:"Czarny pieprz — domowy trik", text:"Weź kilka ziaren czarnego pieprzu i wacha lub zuj. Beta-kariofylen w pieprzu moze bardzo szybko redukować lekowa reakcje THC. Brzmi dziwnie — dziala."},
+      {title:"Cukier i nawodnienie", text:"Maly lyk slodkiego napoju. Hipoglikemia moze nasilac panikę. Nie zmuszaj do jedzenia jesli wymiotuje."},
+      {title:"Przy intensywnych wymiotach (CHS)", text:"Zespol Hyperemesis Kannabinoidowej — paradoksalnie pojawia sie u ciezkich uzytkownikow. Cieple prysznice przynosza ulge. Jesli wymioty trwaja ponad 24h — lekarz."},
+      {title:"Kiedy dzwonic 112", text:"Dzwon jesli: osoba traci przytomnosc i nie mozna jej wybudzic, ma drgawki, jest siniawa lub nie oddycha. To moze wskazywac na domieszkę innych substancji."}
+    ],
+    cpr: false,
+    recovery: true
+  },
+  ketamina: {
+    color: "#00AAFF",
+    recognize: {
+      title: "JAK ROZPOZNAC PRZEDAWKOWANIE KETAMINY",
+      symptoms: [
+        {label:"SWIADOMOSC", value:"K-hole: calkowita dysocjacja, brak kontaktu"},
+        {label:"OCZY", value:"Otwarte, szkliste, bez reakcji na swiatlo"},
+        {label:"ODDECH", value:"Spowolniony, nieregularny"},
+        {label:"CIALO", value:"Sztywnosc lub zwiotczenie miesni"},
+        {label:"RUCHY", value:"Mimowolne, nieskoordynowane"},
+        {label:"CZAS", value:"K-hole trwa 30-90 min, ale moze byc dluzej"}
+      ],
+      critical: "K-hole to nie smierc — ale osoba w k-hole jest calkowicie bezbronna. Nie moze sie sama chronic, zmieniac pozycji ani krzyczec po pomoc. Wymagana stala opieka."
+    },
+    help: [
+      {title:"Pozycja boczna natychmiast", text:"Osoba w k-hole moze wymiotowac i sie zachlysac. Pozycja boczna przez caly czas trwania stanu. Nie zostawiaj ani na chwile."},
+      {title:"Nie wpadaj w panikę", text:"K-hole wyglada przerazajaco ale zazwyczaj mija samoistnie. Monitoruj oddech. Jesli klatka piersiowa sie unosi regularnie — to dobry znak."},
+      {title:"Nie mieszaj z innymi substancjami", text:"Jesli wziele ketamine z alkoholem, opioidami lub benzodiazepinami — to jest INNE i BARDZIEJ niebezpieczne. Natychmiastowe 112."},
+      {title:"Cieply i bezpieczny", text:"Ketamina powoduje hipotermie. Przykryj kocbem. Unikaj zimnego podlogi. Sprawdzaj czy sie nie wyziebia."},
+      {title:"Kiedy dzwonic 112", text:"Dzwon jesli: oddech jest bardzo wolny lub nieregularny, skora jest sinawo-szara, nie mozna wybudzic po 2 godzinach, lub jesli mieszala z innymi substancjami."}
+    ],
+    cpr: true,
+    recovery: true
+  }
+};
+
+function makePill(color,size){
+  var ns="http://www.w3.org/2000/svg";
+  var svg=document.createElementNS(ns,"svg");
+  svg.setAttribute("width",size);svg.setAttribute("height",size*0.5);
+  svg.setAttribute("viewBox","0 0 60 30");svg.setAttribute("fill","none");
+  svg.setAttribute("stroke",color);svg.setAttribute("stroke-width","2.5");
+  var r=document.createElementNS(ns,"rect");
+  r.setAttribute("x","2");r.setAttribute("y","2");r.setAttribute("width","56");r.setAttribute("height","26");r.setAttribute("rx","13");
+  var l=document.createElementNS(ns,"line");
+  l.setAttribute("x1","30");l.setAttribute("y1","2");l.setAttribute("x2","30");l.setAttribute("y2","28");
+  svg.appendChild(r);svg.appendChild(l);return svg;
+}
+
+var rain=document.getElementById("rain");
+var colors=["#FF0000","#FFD700","#FF4400"];
+for(var i=0;i<24;i++){
+  var w=document.createElement("div");
+  var c=colors[i%3];
+  w.style.cssText="position:absolute;left:"+((i*4.1)%95)+"%;top:-40px;animation:fall "+(6+(i%5))+"s linear "+((i*0.41)%8)+"s infinite;pointer-events:none;filter:drop-shadow(0 0 3px "+c+");";
+  w.appendChild(makePill(c,24));
+  rain.appendChild(w);
+}
+
+function renderContent(id){
+  var d=DATA[id];
+  var content=document.getElementById("content");
+  var script112=document.getElementById("script112");
+  if(!d){content.innerHTML='<div class="placeholder">// wybierz substancje powyzej</div>';script112.style.display="none";return;}
+
+  var html="";
+
+  // RECOGNIZE section
+  html+='<div class="section">';
+  html+='<div class="section-title red">&#9888; '+d.recognize.title+'</div>';
+  html+='<div class="symptom-grid">';
+  d.recognize.symptoms.forEach(function(s){
+    html+='<div class="symptom-card"><div class="symptom-label">'+s.label+'</div><div class="symptom-value">'+s.value+'</div></div>';
+  });
+  html+='</div>';
+  html+='<div class="alert-box">'+d.recognize.critical+'</div>';
+  html+='</div>';
+
+  // HELP section
+  html+='<div class="section">';
+  html+='<div class="section-title yellow">&#9883; CO ROBIC</div>';
+  d.help.forEach(function(step,i){
+    html+='<div class="step"><div class="step-num">'+(i+1)+'</div><div class="step-text"><strong>'+step.title+'</strong>'+step.text+'</div></div>';
+  });
+  html+='</div>';
+
+  // Naloxone note
+  if(d.naloxone){
+    html+='<div class="info-box">&#128138; NALOKSON (NARCAN): To antidotum na opioidy dostepne bez recepty w niektorych aptekach. Jesli jestes na imprezie gdzie sa opioidy — warto miec. Spray do nosa, dziala w 2-5 min. Jedna dawka moze uratowac zycie.</div>';
+  }
+
+  // Trip sit note
+  if(d.tripsit){
+    html+='<div class="info-box">&#128172; TRIP SITTING: Bycie obok kogos na zlym tripie to jedna z najbardziej pomocnych rzeczy. Nie musisz nic mowic — sama obecnosc spokojnej osoby redukuje panikę. Nie oceniaj, nie kaz sie uspokajac, nie mow ze "przesadza".</div>';
+  }
+
+  // CPR section
+  if(d.cpr){
+    html+='<div class="section">';
+    html+='<div class="section-title red">&#10084; MASAZ SERCA (RKO)</div>';
+    html+='<div class="cpr-box">';
+    html+='<div class="cpr-title">JAK ROBIC MASAZ SERCA</div>';
+    html+='<div class="step"><div class="step-num">1</div><div class="step-text"><strong>Poloz telefon obok na glosnomowiacym, zadzwon 112</strong>Dyspozytor bedzie Cie prowadzil. Nie rozlaczaj sie.</div></div>';
+    html+='<div class="step"><div class="step-num">2</div><div class="step-text"><strong>Uloz dlonie na srodku klatki piersiowej</strong>Srodek mostka. Splot palce. Wyprostuj rece w lokciach.</div></div>';
+    html+='<div class="step"><div class="step-num">3</div><div class="step-text"><strong>Uciskaj mocno i szybko</strong>Na glebokosc 5-6 cm. Rytm: 100-120 na minute — tempo piosenki Stayin Alive (Bee Gees). Licz na glos: 1-i-2-i-3-i...</div></div>';
+    html+='<div class="step"><div class="step-num">4</div><div class="step-text"><strong>Nie zatrzymuj sie</strong>Kontynuuj do przyjazdu karetki lub az odzyska samodzielny oddech. Zmieniaj sie z innymi osobami co 2 minuty jesli mozliwe.</div></div>';
+    html+='<div class="cpr-note">Nie boj sie zlamanych zeber. Zebra sie zrosna — mozg bez tlenu umiera na zawsze. Zbyt delikatny masaz nie ratuje zycia.</div>';
+    html+='</div></div>';
+  }
+
+  // Recovery position
+  if(d.recovery){
+    html+='<div class="section">';
+    html+='<div class="recovery-box">';
+    html+='<div class="recovery-title">POZYCJA BOCZNA BEZPIECZNA</div>';
+    html+='<div class="step"><div class="step-num">1</div><div class="step-text"><strong>Uloz na boku</strong>Najlepiej na lewym. Zgien kolano wierzchniej nogi pod katem 90 stopni by stabilizowac cialo.</div></div>';
+    html+='<div class="step"><div class="step-num">2</div><div class="step-text"><strong>Wyciagnij reke pod glowe</strong>Wierzchnia reka podlozona pod policzek. Stabilizuje pozycje i zapobiega toczeniu sie na brzuch lub plecy.</div></div>';
+    html+='<div class="step"><div class="step-num">3</div><div class="step-text"><strong>Odchyl glowe lekko do tylu</strong>Lekkie odchylenie brody w gore otwiera drogi oddechowe. Nie przegigaj — delikatnie.</div></div>';
+    html+='<div class="step"><div class="step-num">4</div><div class="step-text"><strong>Monitoruj oddech co 30 sekund</strong>Patrz czy klatka piersiowa sie unosi. Sluchaj oddechu. Jesli przestaje oddychac — natychmiast RKO.</div></div>';
+    html+='</div></div>';
+  }
+
+  content.innerHTML=html;
+  script112.style.display="block";
+  content.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+document.getElementById("subSel").addEventListener("change",function(){
+  renderContent(this.value);
+});
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+</script>
+</body>
+</html>
