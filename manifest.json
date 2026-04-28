@@ -1,0 +1,22 @@
+{
+  "name": "Harm Reduction",
+  "short_name": "HarmRed",
+  "description": "Kalkulator dawek, interakcje, pierwsza pomoc przy przedawkowaniu",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "portrait",
+  "shortcuts": [
+    {
+      "name": "Panic",
+      "url": "/panic/",
+      "description": "Pomoc przy przedawkowaniu"
+    },
+    {
+      "name": "Mapa SOR",
+      "url": "/sor/",
+      "description": "Najblizsze SOR"
+    }
+  ]
+}
