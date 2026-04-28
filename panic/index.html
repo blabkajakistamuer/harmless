@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>PANIC</title>
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#FF0000"/>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#000;min-height:100vh;font-family:'JetBrains Mono',monospace;overflow-x:hidden;}
+    @keyframes breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.03);}}
+    @keyframes warn-pulse{0%,100%{box-shadow:0 0 20px #FF000088;}50%{box-shadow:0 0 50px #FF0000DD;}}
+    @keyframes flash-white{0%{opacity:0;}10%{opacity:1;}100%{opacity:1;}}
+    @keyframes slide-up{0%{transform:translateY(30px);opacity:0;}100%{transform:translateY(0);opacity:1;}}
+    @keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:0;}}
+
+    /* SCREEN STATES */
+    .screen{display:none;min-height:100vh;flex-direction:column;}
+    .screen.active{display:flex;}
+
+    /* STEP 1 - WHITE SCREEN TORCH */
+    #screen-torch{background:#FFFFFF;align-items:center;justify-content:flex-end;padding-bottom:3rem;}
+    .torch-text{text-align:center;padding:1.5rem;background:rgba(0,0,0,0.75);border-radius:0;width:100%;}
+    .torch-text p{font-family:'VT323',monospace;font-size:1.3rem;color:#fff;letter-spacing:0.08em;line-height:1.6;margin-bottom:1rem;}
+    .torch-swipe{font-family:'VT323',monospace;font-size:1rem;color:#aaa;letter-spacing:0.1em;animation:blink 1.5s infinite;}
+    .torch-btn{display:block;width:calc(100% - 3rem);margin:0 auto;background:#FF0000;color:#fff;font-family:'VT323',monospace;font-size:2rem;letter-spacing:0.2em;padding:1rem;border:none;cursor:pointer;text-align:center;margin-top:1rem;}
+
+    /* STEP 2 - DIAGNOSTIC */
+    #screen-diag{background:#000;padding:1.5rem;justify-content:center;align-items:center;}
+    .diag-wrap{width:100%;max-width:500px;}
+    .diag-title{font-family:'VT323',monospace;font-size:1.8rem;color:#FF0000;text-align:center;letter-spacing:0.15em;margin-bottom:2rem;text-shadow:0 0 15px #FF000099;animation:warn-pulse 2s infinite;}
+    .diag-q{font-family:'VT323',monospace;font-size:1.5rem;color:#fff;text-align:center;letter-spacing:0.1em;margin-bottom:1.5rem;line-height:1.3;}
+    .diag-btns{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+    .diag-btn{padding:1.5rem 1rem;font-family:'VT323',monospace;font-size:2rem;letter-spacing:0.1em;border:none;cursor:pointer;text-align:center;animation:breathe 2s infinite;}
+    .diag-btn-yes{background:#00AA00;color:#fff;}
+    .diag-btn-no{background:#FF0000;color:#fff;animation:warn-pulse 1.5s infinite;}
+
+    /* STEP 3a - CPR */
+    #screen-cpr{background:#0a0000;padding:1.5rem;flex-direction:column;}
+    .cpr-header{background:#FF0000;padding:1rem;text-align:center;margin-bottom:1.5rem;}
+    .cpr-header-text{font-family:'VT323',monospace;font-size:clamp(2rem,8vw,3.5rem);color:#fff;letter-spacing:0.1em;line-height:1;}
+    .cpr-steps{flex:1;display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1.5rem;}
+    .cpr-step{border:1px solid #330000;padding:1rem;background:rgba(255,0,0,0.05);display:flex;gap:0.8rem;align-items:flex-start;}
+    .cpr-step-num{font-family:'VT323',monospace;font-size:2.5rem;color:#FF0000;line-height:1;min-width:40px;}
+    .cpr-step-body{flex:1;}
+    .cpr-step-title{font-family:'VT323',monospace;font-size:1.2rem;color:#FF4400;letter-spacing:0.08em;display:block;margin-bottom:0.3rem;}
+    .cpr-step-text{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#880000;line-height:1.6;}
+    .cpr-note{border:1px solid #FF0000;padding:1rem;background:rgba(255,0,0,0.08);font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#FF0000;line-height:1.7;text-align:center;font-style:italic;margin-bottom:1.5rem;}
+
+    /* STEP 3b - RECOVERY */
+    #screen-recovery{background:#000a00;padding:1.5rem;flex-direction:column;}
+    .rec-header{background:#FFD700;padding:1rem;text-align:center;margin-bottom:1.5rem;}
+    .rec-header-text{font-family:'VT323',monospace;font-size:clamp(1.8rem,7vw,3rem);color:#000;letter-spacing:0.1em;line-height:1;}
+    .rec-steps{flex:1;display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1.5rem;}
+    .rec-step{border:1px solid #332200;padding:1rem;background:rgba(255,215,0,0.04);display:flex;gap:0.8rem;align-items:flex-start;}
+    .rec-step-num{font-family:'VT323',monospace;font-size:2.5rem;color:#FFD700;line-height:1;min-width:40px;}
+    .rec-step-body{flex:1;}
+    .rec-step-title{font-family:'VT323',monospace;font-size:1.2rem;color:#AA8800;letter-spacing:0.08em;display:block;margin-bottom:0.3rem;}
+    .rec-step-text{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:#664400;line-height:1.6;}
+    .rec-q{font-family:'VT323',monospace;font-size:1.3rem;color:#FFD700;text-align:center;margin-bottom:1rem;letter-spacing:0.1em;}
+
+    /* SCRIPT 112 */
+    .script-box{border:1px solid #004400;padding:1rem;background:rgba(0,255,0,0.02);margin-bottom:1rem;}
+    .script-title{font-family:'VT323',monospace;font-size:1rem;color:#00AA44;letter-spacing:0.2em;margin-bottom:0.8rem;}
+    .script-line{display:flex;gap:0.6rem;margin-bottom:0.5rem;font-family:'JetBrains Mono',monospace;font-size:0.72rem;line-height:1.6;}
+    .script-num{color:#004400;min-width:16px;}
+    .script-say{color:#008800;}
+    .script-say span{color:#00FF00;}
+
+    /* BIG CALL BUTTON */
+    .call-btn{display:block;width:100%;background:#FF0000;border:none;color:#fff;font-family:'VT323',monospace;font-size:clamp(2.5rem,10vw,4rem);letter-spacing:0.2em;padding:1.5rem;cursor:pointer;text-align:center;text-decoration:none;animation:warn-pulse 1.5s infinite;position:sticky;bottom:0;z-index:10;}
+
+    /* BACK */
+    .back-btn{background:transparent;border:1px solid #330000;color:#440000;font-family:'VT323',monospace;font-size:1rem;letter-spacing:0.15em;padding:0.5rem 1rem;cursor:pointer;margin-bottom:1rem;align-self:flex-start;}
+  </style>
+</head>
+<body>
+
+<!-- SCREEN 1: TORCH -->
+<div class="screen active" id="screen-torch">
+  <div style="flex:1;"></div>
+  <div class="torch-text">
+    <p>Uzyj swiatla ekranu by sprawdzic zrenice.<br>Szpilkowate = opioidy. Ogromne = stymulanty/LSD.</p>
+    <div class="torch-swipe">&#8595; PRZESUŃ W DOL BY PRZEJSC DO RATUNKU &#8595;</div>
+    <button class="torch-btn" id="torchNext">DALEJ — SPRAWDZ ODDECH</button>
+  </div>
+</div>
+
+<!-- SCREEN 2: DIAGNOSIS -->
+<div class="screen" id="screen-diag">
+  <div class="diag-wrap">
+    <div class="diag-title">&#9888; SZYBKA DIAGNOSTYKA</div>
+
+    <div id="diag-q1">
+      <div class="diag-q">CZY OSOBA ODDYCHA?<br><small style="font-size:0.7em;color:#660000;">(patrz na klatke piersiowa, sluchaj oddechu)</small></div>
+      <div class="diag-btns">
+        <button class="diag-btn diag-btn-yes" id="breathYes">TAK<br>&#10003;</button>
+        <button class="diag-btn diag-btn-no" id="breathNo">NIE<br>&#10007;</button>
+      </div>
+    </div>
+
+    <div id="diag-q2" style="display:none;">
+      <div class="diag-q">CZY REAGUJE?<br><small style="font-size:0.7em;color:#666;">(potrzasnij, uszczypnij w ucho, zawolaj glosno)</small></div>
+      <div class="diag-btns">
+        <button class="diag-btn diag-btn-yes" id="reactYes">TAK<br>&#10003;</button>
+        <button class="diag-btn diag-btn-no" id="reactNo">NIE<br>&#10007;</button>
+      </div>
+    </div>
+
+    <div id="diag-monitor" style="display:none;text-align:center;">
+      <div style="font-family:'VT323',monospace;font-size:1.5rem;color:#00FF00;margin-bottom:1rem;">ODDYCHA I REAGUJE</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#004400;line-height:1.8;margin-bottom:1.5rem;">Pozostan z osoba. Monitoruj oddech. Jesli stan sie pogarsza — wróc do poczatku.</div>
+      <button class="diag-btn diag-btn-no" onclick="showScreen('screen-diag');" style="width:100%;font-size:1.2rem;">WRÓC DO DIAGNOSTYKI</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN 3a: CPR -->
+<div class="screen" id="screen-cpr">
+  <div class="cpr-header">
+    <div class="cpr-header-text">MASAZ SERCA</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:rgba(255,255,255,0.8);margin-top:0.3rem;">OSOBA NIE ODDYCHA — DZIALAJ TERAZ</div>
+  </div>
+
+  <div class="cpr-steps">
+    <div class="cpr-step">
+      <div class="cpr-step-num">1</div>
+      <div class="cpr-step-body">
+        <span class="cpr-step-title">POLOZ TELEFON NA GLOSNIK, DZWON 112</span>
+        <span class="cpr-step-text">Dyspozytor bedzie prowadzil. Nie rozlaczaj sie przez caly czas.</span>
+      </div>
+    </div>
+    <div class="cpr-step">
+      <div class="cpr-step-num">2</div>
+      <div class="cpr-step-body">
+        <span class="cpr-step-title">DLONIE NA SRODEK KLATKI PIERSIOWEJ</span>
+        <span class="cpr-step-text">Srodek mostka. Splot palce. Wyprostuj rece w lokciach. Cialo prostopadle do poszkodowanego.</span>
+      </div>
+    </div>
+    <div class="cpr-step">
+      <div class="cpr-step-num">3</div>
+      <div class="cpr-step-body">
+        <span class="cpr-step-title">UCISKAJ MOCNO I SZYBKO</span>
+        <span class="cpr-step-text">Glebokos 5-6 cm. Rytm: 100-120/min — tempo piosenki Stayin Alive. Licz na glos: 1-i-2-i-3-i-4-i...</span>
+      </div>
+    </div>
+    <div class="cpr-step">
+      <div class="cpr-step-num">4</div>
+      <div class="cpr-step-body">
+        <span class="cpr-step-title">NIE PRZERYWAJ</span>
+        <span class="cpr-step-text">Do przyjazdu karetki lub az odzyska oddech. Zmieniaj sie co 2 minuty jesli masz pomoce.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="cpr-note">Nie boj sie zlamanych zeber. Zebra sie zrosna — mozg bez tlenu umiera na zawsze. Zbyt delikatny masaz nie ratuje zycia.</div>
+
+  <div class="script-box">
+    <div class="script-title">CO POWIEDZIEC DYSPOZYTOROWI</div>
+    <div class="script-line"><span class="script-num">1.</span><span class="script-say">LOKALIZACJA: <span>"Jestem w [miasto, ulica]"</span></span></div>
+    <div class="script-line"><span class="script-num">2.</span><span class="script-say">STAN: <span>"Osoba nie oddycha, robie masaz serca"</span></span></div>
+    <div class="script-line"><span class="script-num">3.</span><span class="script-say">POWOD: <span>"Prawdopodobne przedawkowanie"</span></span></div>
+  </div>
+
+  <a class="call-btn" href="tel:112">&#128222; DZWON 112</a>
+</div>
+
+<!-- SCREEN 3b: RECOVERY POSITION -->
+<div class="screen" id="screen-recovery">
+  <div class="rec-header">
+    <div class="rec-header-text">POZYCJA BOCZNA BEZPIECZNA</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:rgba(0,0,0,0.6);margin-top:0.3rem;">ODDYCHA ALE NIE REAGUJE</div>
+  </div>
+
+  <div class="rec-steps">
+    <div class="rec-step">
+      <div class="rec-step-num">1</div>
+      <div class="rec-step-body">
+        <span class="rec-step-title">ULOZ NA BOKU</span>
+        <span class="rec-step-text">Najlepiej na lewym boku. Zgien wierzchnie kolano pod 90 stopni — stabilizuje cialo.</span>
+      </div>
+    </div>
+    <div class="rec-step">
+      <div class="rec-step-num">2</div>
+      <div class="rec-step-body">
+        <span class="rec-step-title">REKA POD GLOWE</span>
+        <span class="rec-step-text">Wierzchnia reka podlozona pod policzek. Zapobiega toczeniu sie na plecy.</span>
+      </div>
+    </div>
+    <div class="rec-step">
+      <div class="rec-step-num">3</div>
+      <div class="rec-step-body">
+        <span class="rec-step-title">ODCHYL GLOWE LEKKO DO TYLU</span>
+        <span class="rec-step-text">Delikatne odchylenie brody ku gorze otwiera drogi oddechowe. Nie przegigaj.</span>
+      </div>
+    </div>
+    <div class="rec-step">
+      <div class="rec-step-num">4</div>
+      <div class="rec-step-body">
+        <span class="rec-step-title">MONITORUJ ODDECH CO 30 SEKUND</span>
+        <span class="rec-step-text">Patrz czy klatka sie unosi. Sluchaj. Jesli przestaje oddychac — natychmiast na plecach i masaz serca.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rec-q">CZY ZADZWONILES JUZ POD 112?</div>
+
+  <div class="script-box">
+    <div class="script-title">CO POWIEDZIEC DYSPOZYTOROWI</div>
+    <div class="script-line"><span class="script-num">1.</span><span class="script-say">LOKALIZACJA: <span>"Jestem w [miasto, ulica]"</span></span></div>
+    <div class="script-line"><span class="script-num">2.</span><span class="script-say">STAN: <span>"Osoba nieprzytomna, oddycha, w pozycji bocznej"</span></span></div>
+    <div class="script-line"><span class="script-num">3.</span><span class="script-say">POWOD: <span>"Prawdopodobne przedawkowanie"</span></span></div>
+  </div>
+
+  <a class="call-btn" href="tel:112">&#128222; DZWON 112</a>
+</div>
+
+<script>
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+document.getElementById('torchNext').addEventListener('click',function(){
+  showScreen('screen-diag');
+});
+
+document.getElementById('breathNo').addEventListener('click',function(){
+  showScreen('screen-cpr');
+});
+
+document.getElementById('breathYes').addEventListener('click',function(){
+  document.getElementById('diag-q1').style.display='none';
+  document.getElementById('diag-q2').style.display='block';
+});
+
+document.getElementById('reactNo').addEventListener('click',function(){
+  showScreen('screen-recovery');
+});
+
+document.getElementById('reactYes').addEventListener('click',function(){
+  document.getElementById('diag-q2').style.display='none';
+  document.getElementById('diag-monitor').style.display='block';
+});
+
+// Try to maximize brightness (works on some browsers)
+if(screen && screen.orientation){
+  try{screen.orientation.lock('portrait').catch(function(){});}catch(e){}
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+</script>
+</body>
+</html>
